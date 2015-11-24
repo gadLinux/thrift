@@ -339,11 +339,12 @@ gboolean my_access_manager(ThriftTransport * transport, X509 *cert, struct socka
 		// Host pinning
 		if(verify_ip(subject, addr)){
 			g_info("Verified subject");
+			OPENSSL_free(subject);
 		}else{
 			g_info("Cannot verify subject");
+			OPENSSL_free(subject);
 			return FALSE;
 		}
-		OPENSSL_free(subject);
 	}
 
 	if(!verify_certificate_sn(cert, CERT_SERIAL_NUMBER)){
@@ -387,8 +388,12 @@ test_ssl_authorization_manager(void)
 	// Test against level2 owncloud certificate
 	tSSLsocket = thrift_ssl_socket_new_with_host(SSLTLS, "owncloud.level2crm.com", port, &error);
 	thrift_ssl_socket_set_manager(tSSLsocket, my_access_manager); 					// Install pinning manager
-	thrift_ssl_load_cert_from_file(tSSLsocket, "./owncloud.level2crm.pem");
-
+	//thrift_ssl_load_cert_from_file(tSSLsocket, "./owncloud.level2crm.pem");
+	unsigned char cert_buffer[65534];
+	read_from_file(cert_buffer, 65534, "./owncloud.level2crm.pem");
+	if(!thrift_ssl_load_cert_from_buffer(tSSLsocket, cert_buffer)){
+		g_warning("Certificates cannot be loaded!");
+	}
 
 	transport = THRIFT_TRANSPORT (tSSLsocket);
 	assert (thrift_ssl_socket_open (transport, NULL) == TRUE);

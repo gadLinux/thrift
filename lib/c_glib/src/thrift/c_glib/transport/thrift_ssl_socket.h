@@ -123,10 +123,19 @@ void thrift_ssl_socket_get_error(GError **error, const guchar *error_msg, guint 
 
 void thrift_ssl_socket_set_manager(ThriftSSLSocket *ssl_socket, AUTHORIZATION_MANAGER_CALLBACK callback);
 
+/* This is the SSL API */
 ThriftSSLSocket*
 thrift_ssl_socket_new_with_host(ThriftSSLSocketProtocol ssl_protocol, gchar *hostname, guint port, GError **error);
 ThriftSSLSocket*
 thrift_ssl_socket_new(ThriftSSLSocketProtocol ssl_protocol, GError **error);
+gboolean
+thrift_ssl_load_cert_from_file(ThriftSSLSocket *ssl_socket, const char *file_name);
+gboolean
+thrift_ssl_load_cert_from_buffer(ThriftSSLSocket *ssl_socket, const char chain_certs[]);
+void
+thrift_ssl_socket_initialize_openssl(void);
+void
+thrift_ssl_socket_finalize_openssl(void);
 
 G_END_DECLS
 #endif
