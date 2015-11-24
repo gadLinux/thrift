@@ -329,7 +329,12 @@ thrift_ssl_socket_create_ssl_context(ThriftTransport * transport, GError **error
 	return TRUE;
 }
 
-
+/**
+ *
+ * @param ssl_socket The ssl socket
+ * @param file_name The file name of the PEM certificate chain
+ * @return
+ */
 gboolean thrift_ssl_load_cert_from_file(ThriftSSLSocket *ssl_socket, const char *file_name)
 {
 	int rc = SSL_CTX_load_verify_locations(ssl_socket->ctx, file_name, NULL);
@@ -340,39 +345,36 @@ gboolean thrift_ssl_load_cert_from_file(ThriftSSLSocket *ssl_socket, const char 
 	return TRUE;
 }
 
-//
-//gboolean thrift_ssl_load_cert_from_buffer(ThriftSSLSocket *ssl_socket, const char chain_certs[])
-//{
-//	gboolean retval = FALSE;
-//	// Load chain of certs
-//	X509 *cacert=NULL;
-//	BIO *mem;
-//	mem = BIO_new(BIO_s_mem());
-//	BIO_puts(mem, chain_certs);
-//	X509_STORE *cert_store = SSL_CTX_get_cert_store(ssl_socket->ssl);
-//
-//	if(cert_store!=NULL){
-//		int index = 0;
-//		while ((cacert = PEM_read_bio_X509(mem, NULL, 0, NULL))!=NULL) {
-//			//			X509_NAME* iname = cacert ? X509_get_issuer_name(cacert) : NULL;
-//			//			X509_NAME* sname = cacert ? X509_get_subject_name(cacert) : NULL;
-//			//			/* Issuer is the authority we trust that warrants nothing useful */
-//			//			print_cn_name("Issuer (cn)", iname);
-//			//			/* Subject is who the certificate is issued to by the authority  */
-//			//			print_cn_name("Subject (cn)", sname);
-//			if(cacert) {
-//				g_info("Our certificate name is %s", cacert->name);
-//				X509_STORE_add_cert(cert_store, cacert);
-//				X509_free(cacert);
-//				cacert=NULL;
-//			} /* Free immediately */
-//			index++;
-//		}
-//		retval=TRUE;
-//	}
-//	BIO_free(mem);
-//	return retval;
-//}
+/**
+ * Load a certificate chain from memory
+ * @param ssl_socket the ssl socket
+ * @param chain_certs the buffer to load PEM from
+ * @return
+ */
+gboolean thrift_ssl_load_cert_from_buffer(ThriftSSLSocket *ssl_socket, const char chain_certs[])
+{
+	gboolean retval = FALSE;
+	// Load chain of certs
+	X509 *cacert=NULL;
+	BIO *mem = BIO_new_mem_buf(chain_certs,strlen(chain_certs));
+	X509_STORE *cert_store = SSL_CTX_get_cert_store(ssl_socket->ctx);
+
+	if(cert_store!=NULL){
+		int index = 0;
+		while ((cacert = PEM_read_bio_X509(mem, NULL, 0, NULL))!=NULL) {
+			if(cacert) {
+				g_debug("Our certificate name is %s", cacert->name);
+				X509_STORE_add_cert(cert_store, cacert);
+				X509_free(cacert);
+				cacert=NULL;
+			} /* Free immediately */
+			index++;
+		}
+		retval=TRUE;
+	}
+	BIO_free(mem);
+	return retval;
+}
 
 gboolean
 thrift_ssl_socket_authorize(ThriftTransport * transport, GError **error)
@@ -512,7 +514,8 @@ thrift_ssl_socket_initialize_openssl(void)
 }
 
 
-void thrift_ssl_socket_finalize_openssl(void) {
+void thrift_ssl_socket_finalize_openssl(void)
+{
 
 	// FIXME This should not be here
 	if (thrift_ssl_socket_global_context != NULL) {
