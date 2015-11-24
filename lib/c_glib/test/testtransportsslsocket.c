@@ -339,12 +339,14 @@ gboolean my_access_manager(ThriftTransport * transport, X509 *cert, struct socka
 		// Host pinning
 		if(verify_ip(subject, addr)){
 			g_info("Verified subject");
-			OPENSSL_free(subject);
 		}else{
 			g_info("Cannot verify subject");
-			OPENSSL_free(subject);
-			return FALSE;
+			valid=FALSE;
 		}
+		OPENSSL_free(subject);
+
+		if(!valid)
+			return valid;
 	}
 
 	if(!verify_certificate_sn(cert, CERT_SERIAL_NUMBER)){
