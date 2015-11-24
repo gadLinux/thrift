@@ -323,9 +323,6 @@ thrift_ssl_socket_create_ssl_context(ThriftTransport * transport, GError **error
 					THRIFT_SSL_SOCKET_ERROR_TRANSPORT,
 					"Unable to create SSL context");
 			return FALSE;
-			//		    string errors;
-			//		    buildErrors(errors);
-			//		    throw TSSLException("SSL_new: " + errors);
 		}
 	}
 
@@ -333,38 +330,49 @@ thrift_ssl_socket_create_ssl_context(ThriftTransport * transport, GError **error
 }
 
 
-gboolean thrift_ssl_load_cert_from_buffer(ThriftSSLSocket *ssl_socket, const char chain_certs[])
+gboolean thrift_ssl_load_cert_from_file(ThriftSSLSocket *ssl_socket, const char *file_name)
 {
-	gboolean retval = FALSE;
-	// Load chain of certs
-	X509 *cacert=NULL;
-	BIO *mem;
-	mem = BIO_new(BIO_s_mem());
-	BIO_puts(mem, chain_certs);
-	X509_STORE *cert_store = SSL_CTX_get_cert_store(ssl_socket->ssl);
-
-	if(cert_store!=NULL){
-		int index = 0;
-		while ((cacert = PEM_read_bio_X509(mem, NULL, 0, NULL))!=NULL) {
-			//			X509_NAME* iname = cacert ? X509_get_issuer_name(cacert) : NULL;
-			//			X509_NAME* sname = cacert ? X509_get_subject_name(cacert) : NULL;
-			//			/* Issuer is the authority we trust that warrants nothing useful */
-			//			print_cn_name("Issuer (cn)", iname);
-			//			/* Subject is who the certificate is issued to by the authority  */
-			//			print_cn_name("Subject (cn)", sname);
-			X509_STORE_add_cert(cert_store, cacert);
-			if(cacert) {
-				X509_free(cacert);
-				cacert=NULL;
-			} /* Free immediately */
-			index++;
-		}
-		retval=TRUE;
+	int rc = SSL_CTX_load_verify_locations(ssl_socket->ctx, file_name, NULL);
+	if (rc != 1) { // verify authentication result
+		g_warning("Load of certificates failed!: %s", X509_verify_cert_error_string(ERR_get_error()));
+		return FALSE;
 	}
-	BIO_free(mem);
-	return retval;
+	return TRUE;
 }
 
+//
+//gboolean thrift_ssl_load_cert_from_buffer(ThriftSSLSocket *ssl_socket, const char chain_certs[])
+//{
+//	gboolean retval = FALSE;
+//	// Load chain of certs
+//	X509 *cacert=NULL;
+//	BIO *mem;
+//	mem = BIO_new(BIO_s_mem());
+//	BIO_puts(mem, chain_certs);
+//	X509_STORE *cert_store = SSL_CTX_get_cert_store(ssl_socket->ssl);
+//
+//	if(cert_store!=NULL){
+//		int index = 0;
+//		while ((cacert = PEM_read_bio_X509(mem, NULL, 0, NULL))!=NULL) {
+//			//			X509_NAME* iname = cacert ? X509_get_issuer_name(cacert) : NULL;
+//			//			X509_NAME* sname = cacert ? X509_get_subject_name(cacert) : NULL;
+//			//			/* Issuer is the authority we trust that warrants nothing useful */
+//			//			print_cn_name("Issuer (cn)", iname);
+//			//			/* Subject is who the certificate is issued to by the authority  */
+//			//			print_cn_name("Subject (cn)", sname);
+//			if(cacert) {
+//				g_info("Our certificate name is %s", cacert->name);
+//				X509_STORE_add_cert(cert_store, cacert);
+//				X509_free(cacert);
+//				cacert=NULL;
+//			} /* Free immediately */
+//			index++;
+//		}
+//		retval=TRUE;
+//	}
+//	BIO_free(mem);
+//	return retval;
+//}
 
 gboolean
 thrift_ssl_socket_authorize(ThriftTransport * transport, GError **error)
@@ -375,13 +383,10 @@ thrift_ssl_socket_authorize(ThriftTransport * transport, GError **error)
 	gboolean authorization_result = FALSE;
 	// We still don't support it
 	if(cls!=NULL && ssl_socket->ssl!=NULL){
-		//		if(!thrift_ssl_load_cert_from_buffer(ssl_socket, chain_certs)){
-		//			g_warning("Cannot load the certificate chain");
-		//		}
 		int rc = SSL_get_verify_result(ssl_socket->ssl);
 		if (rc != X509_V_OK) { // verify authentication result
 			g_warning("The certificate verification failed!: %s", X509_verify_cert_error_string(rc));
-			//			return FALSE;
+			return authorization_result;
 		}
 		X509* cert = SSL_get_peer_certificate(ssl_socket->ssl);
 		if (cert == NULL) {
@@ -403,17 +408,19 @@ thrift_ssl_socket_authorize(ThriftTransport * transport, GError **error)
 		if (cls->authorize_peer == NULL) {
 			X509_free(cert);
 			return authorization_result;
-		}
-		// both certificate and access manager are present
+		}else{
+			// both certificate and access manager are present
+			struct sockaddr_storage sa;
+			socklen_t saLength = sizeof(struct sockaddr_storage);
 
-		struct sockaddr_storage sa;
-		socklen_t saLength = sizeof(struct sockaddr_storage);
-
-		if (getpeername(socket->sd, (struct sockaddr*)&sa, &saLength) != 0) {
-			sa.ss_family = AF_UNSPEC;
+			if (getpeername(socket->sd, (struct sockaddr*)&sa, &saLength) != 0) {
+				sa.ss_family = AF_UNSPEC;
+			}
+			authorization_result = cls->authorize_peer(transport, cert, &sa, error);
 		}
-		authorization_result = cls->authorize_peer(transport, cert, &sa, error);
-		X509_free(cert);
+		if(cert!=NULL){
+			X509_free(cert);
+		}
 	}
 
 	return authorization_result;
