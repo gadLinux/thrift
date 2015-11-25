@@ -199,6 +199,18 @@ if test "$have_cpp" = "yes" -o "$have_c_glib" = "yes";  then
 	AX_CHECK_OPENSSL()
 fi
 
+# if android no version must be set
+case $host_cpu in
+	arm) 
+		AM_CONDITIONAL([ARM_SYSTEM], [ test 1 = 1 ])
+		ANDROID_LDFLAGS="-avoid-version"
+		;;
+	*)
+		;;
+esac
+AC_SUBST(ANDROID_LDFLAGS)
+
+
 AX_THRIFT_LIB(csharp, [C#], yes)
 if test "$with_csharp" = "yes";  then
   PKG_CHECK_MODULES(MONO, mono >= 2.11.0, mono_2_11=yes, mono_2_11=no)
