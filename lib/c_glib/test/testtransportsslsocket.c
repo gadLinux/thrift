@@ -362,6 +362,7 @@ gboolean my_access_manager(ThriftTransport * transport, X509 *cert, struct socka
 
 
 
+
 static void
 test_ssl_authorization_manager(void)
 {
@@ -417,6 +418,7 @@ test_ssl_authorization_manager(void)
 	assert ( status == 0 );
 	//  }
 }
+
 
 /* test ThriftSocket's peek() implementation */
 //static void
@@ -565,7 +567,7 @@ main(int argc, char *argv[])
 	g_test_add_func ("/testtransportsslsocket/CreateAndDestroy", test_ssl_create_and_destroy);
 	g_test_add_func ("/testtransportsslsocket/CreateAndSetProperties", test_ssl_create_and_set_properties);
 	g_test_add_func ("/testtransportsslsocket/OpenAndClose", test_ssl_open_and_close);
-	g_test_add_func ("/testtransportsslsocket/AuthorizationManager", test_ssl_authorization_manager);
+	g_test_add_func ("/testtransportsslsocket/AuthorizationManagerPinning", test_ssl_authorization_manager);
 	//  g_test_add_func ("/testtransportsslsocket/Peek", test_ssl_peek);
 
 	retval = g_test_run ();

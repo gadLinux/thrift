@@ -206,6 +206,7 @@ case $host_cpu in
 		ANDROID_LDFLAGS="-avoid-version"
 		;;
 	*)
+		AM_CONDITIONAL([ARM_SYSTEM], [ test 1 = 0 ])
 		;;
 esac
 AC_SUBST(ANDROID_LDFLAGS)
