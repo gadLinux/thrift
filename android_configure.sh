@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # I put all my dev stuff in here
-export DEV_PREFIX=$HOME/thrift
+export DEV_PREFIX=/opt
 
 # Don't forget to adjust this to your NDK path
 export ANDROID_NDK=/opt/android-ndk-r10c
