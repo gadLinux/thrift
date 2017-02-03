@@ -195,9 +195,9 @@ if test "$with_c_glib" = "yes"; then
 fi
 AM_CONDITIONAL(WITH_C_GLIB, [test "$have_glib2" = "yes" -a "$have_gobject2" = "yes"])
 
-<<<<<<< 28ca038738d69524aaaaff8e980690efc69faad7
 # check we have openssl
 if test "$have_cpp" = "yes" -o "$have_c_glib" = "yes";  then
+	echo "Have cpp or c so we check for OpenSSL"
 	AX_CHECK_OPENSSL()
 fi
 
@@ -214,14 +214,6 @@ esac
 AC_SUBST(ANDROID_LDFLAGS)
 
 
-=======
-echo "OpenSSL check"
-if test "$have_cpp" = "yes" -o "$have_c_glib" = "yes";  then
-	echo "Have cpp or c so we check for OpenSSL"
-	AX_CHECK_OPENSSL()
-fi
-
->>>>>>> Implement basic version of the TLS transport
 AX_THRIFT_LIB(csharp, [C#], yes)
 if test "$with_csharp" = "yes";  then
   PKG_CHECK_MODULES(MONO, mono >= 2.11.0, mono_2_11=yes, mono_2_11=no)
