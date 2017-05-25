@@ -102,6 +102,7 @@ thrift_socket_open (ThriftTransport *transport, GError **error)
   struct hostent *hp = NULL;
   struct sockaddr_in pin;
   int err;
+  int sd;
 #if defined(HAVE_GETHOSTBYNAME_R)
   struct hostent he;
   char buf[1024];
@@ -132,7 +133,7 @@ thrift_socket_open (ThriftTransport *transport, GError **error)
   pin.sin_port = htons (tsocket->port);
 
   /* create the socket */
-  if ((tsocket->sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
+  if ((sd = socket (AF_INET, SOCK_STREAM, 0)) == -1)
   {
     g_set_error (error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_SOCKET,
                  "failed to create socket for host %s:%d - %s",
@@ -142,13 +143,16 @@ thrift_socket_open (ThriftTransport *transport, GError **error)
   }
 
   /* open a connection */
-  if (connect (tsocket->sd, (struct sockaddr *) &pin, sizeof(pin)) == -1)
+  if (connect (sd, (struct sockaddr *) &pin, sizeof(pin)) == -1)
   {
     g_set_error (error, THRIFT_TRANSPORT_ERROR, THRIFT_TRANSPORT_ERROR_CONNECT,
                  "failed to connect to host %s:%d - %s",
                  tsocket->hostname, tsocket->port, strerror(errno));
+    close(sd); // Since it was created we must free it
     return FALSE;
   }
+
+  tsocket->sd = sd;
 
   return TRUE;
 }

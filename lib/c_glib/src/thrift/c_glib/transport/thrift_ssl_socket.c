@@ -215,8 +215,6 @@ thrift_ssl_socket_read (ThriftTransport *transport, gpointer buf,
   ThriftSSLSocket *ssl_socket = THRIFT_SSL_SOCKET (transport);
   guint bytes = 0;
   guint retries = 0;
-  ThriftSocket *socket = THRIFT_SOCKET (transport);
-  g_return_val_if_fail (socket->sd != THRIFT_INVALID_SOCKET, FALSE);
   if (!thrift_ssl_socket_is_open (transport))
   {
       g_set_error (error, THRIFT_TRANSPORT_ERROR,
@@ -262,8 +260,6 @@ thrift_ssl_socket_write (ThriftTransport *transport, const gpointer buf,
   ThriftSSLSocket *ssl_socket = THRIFT_SSL_SOCKET (transport);
   gint ret = 0;
   guint sent = 0;
-  ThriftSocket *socket = THRIFT_SOCKET (transport);
-  g_return_val_if_fail (socket->sd != THRIFT_INVALID_SOCKET, FALSE);
 
   if (!thrift_ssl_socket_is_open (transport))
   {
@@ -309,8 +305,13 @@ thrift_ssl_socket_flush (ThriftTransport *transport, GError **error)
   gint ret = 0;
   guint sent = 0;
 
-  ThriftSocket *socket = THRIFT_SOCKET (transport);
-  g_return_val_if_fail (socket->sd != THRIFT_INVALID_SOCKET, FALSE);
+  if (!thrift_ssl_socket_is_open (transport))
+  {
+      g_set_error (error, THRIFT_TRANSPORT_ERROR,
+	THRIFT_TRANSPORT_ERROR_SOCKET,
+       "The SSL connection is not open. Nothing to flush");
+      return FALSE;
+  }
 
   BIO* bio = SSL_get_wbio(ssl_socket->ssl);
   if (bio == NULL) {
