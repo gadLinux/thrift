@@ -153,6 +153,9 @@ thrift_ssl_socket_peek (ThriftTransport *transport, GError **error)
 {
   gboolean retval = FALSE;
   ThriftSSLSocket *ssl_socket = THRIFT_SSL_SOCKET (transport);
+
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
   if (thrift_ssl_socket_is_open (transport))
     {
       int rc;
@@ -194,6 +197,7 @@ gboolean
 thrift_ssl_socket_close (ThriftTransport *transport, GError **error)
 {
   gboolean retval = FALSE;
+
   if(THRIFT_SSL_SOCKET(transport)->ssl) {
       int rc = SSL_shutdown(THRIFT_SSL_SOCKET(transport)->ssl);
       if (rc < 0) {
@@ -215,12 +219,15 @@ thrift_ssl_socket_read (ThriftTransport *transport, gpointer buf,
   ThriftSSLSocket *ssl_socket = THRIFT_SSL_SOCKET (transport);
   guint bytes = 0;
   guint retries = 0;
+
+//  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
   if (!thrift_ssl_socket_is_open (transport))
   {
-      g_set_error (error, THRIFT_TRANSPORT_ERROR,
-       THRIFT_TRANSPORT_ERROR_RECEIVE,
-       "The SSL connection is not open");
-      return -1;
+//      g_set_error (error, THRIFT_TRANSPORT_ERROR,
+//       THRIFT_TRANSPORT_ERROR_RECEIVE,
+//       "The SSL connection is not open");
+      return FALSE;
   }
 
   for (retries=0; retries < maxRecvRetries_; retries++) {
@@ -260,13 +267,14 @@ thrift_ssl_socket_write (ThriftTransport *transport, const gpointer buf,
   ThriftSSLSocket *ssl_socket = THRIFT_SSL_SOCKET (transport);
   gint ret = 0;
   guint sent = 0;
+  GError *tmp_error;
 
   if (!thrift_ssl_socket_is_open (transport))
   {
-      g_set_error (error, THRIFT_TRANSPORT_ERROR,
-       THRIFT_TRANSPORT_ERROR_SEND,
-       "The SSL connection is not open");
-      return -1;
+//      g_set_error (error, THRIFT_TRANSPORT_ERROR,
+//       THRIFT_TRANSPORT_ERROR_SEND,
+//       "The SSL connection is not open");
+      return FALSE;
   }
 
   while (sent < len)
@@ -305,11 +313,13 @@ thrift_ssl_socket_flush (ThriftTransport *transport, GError **error)
   gint ret = 0;
   guint sent = 0;
 
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
   if (!thrift_ssl_socket_is_open (transport))
   {
-      g_set_error (error, THRIFT_TRANSPORT_ERROR,
-	THRIFT_TRANSPORT_ERROR_SOCKET,
-       "The SSL connection is not open. Nothing to flush");
+//      g_set_error (error, THRIFT_TRANSPORT_ERROR,
+//	THRIFT_TRANSPORT_ERROR_SOCKET,
+//       "The SSL connection is not open. Nothing to flush");
       return FALSE;
   }
 
