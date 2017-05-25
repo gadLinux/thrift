@@ -217,21 +217,28 @@ thrift_ssl_socket_read (ThriftTransport *transport, gpointer buf,
   guint retries = 0;
   ThriftSocket *socket = THRIFT_SOCKET (transport);
   g_return_val_if_fail (socket->sd != THRIFT_INVALID_SOCKET, FALSE);
-
-    for (retries=0; retries < maxRecvRetries_; retries++) {
-      bytes = SSL_read(ssl_socket->ssl, buf, len);
-      if (bytes >= 0)
-	break;
-      int errno_copy = THRIFT_GET_SOCKET_ERROR;
-      if (SSL_get_error(ssl_socket->ssl, bytes) == SSL_ERROR_SYSCALL) {
-	  if (ERR_get_error() == 0 && errno_copy == THRIFT_EINTR) {
-	      continue;
-	  }
-      }
+  if (!thrift_ssl_socket_is_open (transport))
+  {
       g_set_error (error, THRIFT_TRANSPORT_ERROR,
-		   THRIFT_TRANSPORT_ERROR_RECEIVE,
-		   "failed to read %d bytes - %s", len, strerror(errno));
+       THRIFT_TRANSPORT_ERROR_RECEIVE,
+       "The SSL connection is not open");
       return -1;
+  }
+
+  for (retries=0; retries < maxRecvRetries_; retries++) {
+    bytes = SSL_read(ssl_socket->ssl, buf, len);
+    if (bytes >= 0)
+      break;
+    int errno_copy = THRIFT_GET_SOCKET_ERROR;
+    if (SSL_get_error(ssl_socket->ssl, bytes) == SSL_ERROR_SYSCALL) {
+      if (ERR_get_error() == 0 && errno_copy == THRIFT_EINTR) {
+          continue;
+      }
+    }
+    g_set_error (error, THRIFT_TRANSPORT_ERROR,
+     THRIFT_TRANSPORT_ERROR_RECEIVE,
+     "failed to read %d bytes - %s", len, strerror(errno));
+    return -1;
   }
   return bytes;
 }
@@ -257,6 +264,14 @@ thrift_ssl_socket_write (ThriftTransport *transport, const gpointer buf,
   guint sent = 0;
   ThriftSocket *socket = THRIFT_SOCKET (transport);
   g_return_val_if_fail (socket->sd != THRIFT_INVALID_SOCKET, FALSE);
+
+  if (!thrift_ssl_socket_is_open (transport))
+  {
+      g_set_error (error, THRIFT_TRANSPORT_ERROR,
+       THRIFT_TRANSPORT_ERROR_SEND,
+       "The SSL connection is not open");
+      return -1;
+  }
 
   while (sent < len)
     {

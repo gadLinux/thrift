@@ -486,7 +486,6 @@ thrift_protocol_decorator_set_property (GObject      *object,
     GParamSpec   *pspec)
 {
   ThriftProtocolDecorator *self = THRIFT_PROTOCOL_DECORATOR (object);
-  g_debug("Is protocol decorator %i", THRIFT_IS_PROTOCOL_DECORATOR(object));
 
   switch (property_id)
   {
@@ -509,7 +508,6 @@ thrift_protocol_decorator_get_property (GObject    *object,
     GParamSpec *pspec)
 {
   ThriftProtocolDecorator *self = THRIFT_PROTOCOL_DECORATOR (object);
-  g_debug("Is protocol decorator %i", THRIFT_IS_PROTOCOL_DECORATOR(object));
 
   switch (property_id)
   {
@@ -579,8 +577,6 @@ thrift_protocol_decorator_class_init (ThriftProtocolDecoratorClass *klass)
   g_object_class_install_properties (object_class,
       PROP_THRIFT_TYPE_PROTOCOL_DECORATOR_END,
       thrift_protocol_decorator_obj_properties);
-
-  g_debug("Current decorator write_message_begin addr %p, new %p", cls->write_message_begin, thrift_protocol_decorator_write_message_begin);
 
   cls->write_message_begin = thrift_protocol_decorator_write_message_begin;
   cls->write_message_end = thrift_protocol_decorator_write_message_end;
